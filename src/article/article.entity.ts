@@ -13,6 +13,9 @@ export class ArticleEntity {
   id: number;
 
   @Column()
+  title: string;
+
+  @Column()
   slug: string;
 
   @Column({ default: '' })
@@ -38,6 +41,6 @@ export class ArticleEntity {
     this.updatedAt = new Date();
   }
 
-  @ManyToOne(() => UserEntity, (user) => user.articles)
+  @ManyToOne(() => UserEntity, (user) => user.articles, { eager: true })
   author: UserEntity;
 }

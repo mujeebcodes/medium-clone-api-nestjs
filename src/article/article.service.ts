@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateArticleDto } from './dto/createArticleDto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArticleEntity } from './article.entity';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { UserEntity } from 'src/user/user.entity';
 import { ArticleResponseInterface } from './types/articleResponse.interface';
 import slugify from 'slugify';
+import { UpdateArticleDto } from './dto/updateArticleDto';
 
 @Injectable()
 export class ArticleService {
@@ -30,6 +31,45 @@ export class ArticleService {
 
   async getArticle(slug: string): Promise<ArticleEntity> {
     return await this.articleRepository.findOne({ where: { slug } });
+  }
+
+  async deleteArticle(
+    currentUserId: number,
+    slug: string,
+  ): Promise<DeleteResult> {
+    const article = await this.getArticle(slug);
+    if (!article) {
+      throw new HttpException('Article does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if (article.author.id !== currentUserId) {
+      throw new HttpException('Article does not exist', HttpStatus.FORBIDDEN);
+    }
+
+    return this.articleRepository.delete({ slug });
+  }
+
+  async updateArticle(
+    currentUserId: number,
+    slug: string,
+    updateArticleDto: UpdateArticleDto,
+  ): Promise<ArticleEntity> {
+    const article = await this.getArticle(slug);
+    if (!article) {
+      throw new HttpException('Article does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if (article.author.id !== currentUserId) {
+      throw new HttpException('Article does not exist', HttpStatus.FORBIDDEN);
+    }
+
+    if (updateArticleDto.title) {
+      updateArticleDto.slug = this.getSlug(updateArticleDto.title);
+    }
+
+    Object.assign(article, updateArticleDto);
+
+    return this.articleRepository.save(article);
   }
 
   buildArticleResponse(article: ArticleEntity): ArticleResponseInterface {
