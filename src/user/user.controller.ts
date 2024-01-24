@@ -15,8 +15,6 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/CreateUserDto';
 import { UserResponseInterface } from './types/userResponse.interface';
 import { LoginUserDto } from './dto/LoginUserDto';
-import { Request } from 'express';
-import { ExpressRequest } from 'src/types/expressRequestInterface';
 import { UserEntity } from './user.entity';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
