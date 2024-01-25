@@ -16,6 +16,9 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
   async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: {},
+    };
     const existingUserByEmail = await this.userRepository.findOne({
       where: { email: createUserDto.email },
     });
@@ -24,11 +27,15 @@ export class UserService {
       where: { username: createUserDto.username },
     });
 
+    if (existingUserByEmail) {
+      errorResponse.errors['email'] = 'already exists';
+    }
+    if (existingUserByUsername) {
+      errorResponse.errors['username'] = ' already exists';
+    }
+
     if (existingUserByEmail || existingUserByUsername) {
-      throw new HttpException(
-        'Email or username already exists',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
     const newUser = new UserEntity();
     Object.assign(newUser, createUserDto);
@@ -36,16 +43,18 @@ export class UserService {
   }
 
   async loginUser(loginUserDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: {
+        'email or password': 'is invalid',
+      },
+    };
     const userByEmail = await this.userRepository.findOne({
       where: { email: loginUserDto.email },
       select: ['id', 'email', 'username', 'bio', 'image', 'password'],
     });
 
     if (!userByEmail) {
-      throw new HttpException(
-        'Invalid credentials',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     const isCorrectPassword = await compare(
@@ -54,10 +63,7 @@ export class UserService {
     );
 
     if (!isCorrectPassword) {
-      throw new HttpException(
-        'Invalid credentials',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
     delete userByEmail.password;
     return userByEmail;

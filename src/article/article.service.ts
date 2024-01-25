@@ -48,7 +48,7 @@ export class ArticleService {
     if (query.favorited) {
       const author = await this.userRepository.findOne({
         where: { username: query.favorited },
-        relations: ['faorites'],
+        relations: ['favorites'],
       });
 
       const ids = author.favorites.map((el) => el.id);
